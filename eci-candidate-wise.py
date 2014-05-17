@@ -3,6 +3,7 @@ import hashlib
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import csv
 
 if not os.path.exists('.cache-ecw'):
     os.makedirs('.cache-ecw')
@@ -12,12 +13,16 @@ session = requests.Session()
 
 def get(url):
     '''Return cached lxml tree for url'''
-    path = os.path.join('.cache-ecw', hashlib.md5(url).hexdigest() + '.html')
+    url_e=url.encode('utf-8')
+    path = os.path.join('.cache-ecw', hashlib.md5(url_e).hexdigest() + '.html')
+    #print(path)
     if not os.path.exists(path):
-        print url
+        print (url)
         response = session.get(url, headers={'User-Agent': ua})
+        #print("opening")
         with open(path, 'w') as fd:
-            fd.write(response.text.encode('utf-8'))
+            fd.write(str(response.text))
+            print("finished writing")
     return BeautifulSoup(open(path), 'html.parser')
 
 def eci(url,code,const):
@@ -31,14 +36,21 @@ def eci(url,code,const):
         result.append(cells)
     return result
 
-codes = ['S0'+str(i) for i in range(1,10)]+['S'+str(i) for i in range(10,29)]+['U0'+str(i) for i in range(1,9)]
 result = []
-for code in codes:
-    for const in range(1,81):
-        url = "http://eciresults.nic.in/Constituencywise"+code+str(const)+".htm?ac="+str(const)
-        try:
-            result += eci(url,code,const)
-        except:
-            pass
 
+
+csv_path="values.csv"
+file=open(csv_path, 'r')
+rows=csv.reader(file)
+for r in rows:
+    code=r[2]
+    const=r[3]
+    print(code+"-"+const)
+    url = "http://eciresults.nic.in/Constituencywise"+code+str(const)+".htm?ac="+str(const)
+    try:
+        result += eci(url,code,const)
+    except:
+        pass
+        
+file.close()
 pd.DataFrame(result).to_csv('eci-candidate-wise.csv', index=False, encoding='utf-8')
