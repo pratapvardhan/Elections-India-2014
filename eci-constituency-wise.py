@@ -32,10 +32,13 @@ def eci(url):
         cells += [state,url[-3:]]
         result.append(cells)
     return result
+
 result=[]
 codes = ['S0'+str(i) for i in range(1,10)]+['S'+str(i) for i in range(10,29)]+['U0'+str(i) for i in range(1,8)]
 for code in codes:
     url = "http://eciresults.nic.in/statewise"+code+".htm?st="+code
     result += eci(url)
 
-pd.DataFrame(result).to_csv('eci-constituency-wise.csv', index=False, encoding='utf-8')
+data = pd.DataFrame(result)
+data.columns = ['Constituency','Constituency-code','Leading Candidate','Leading Party','Trailing Candidate','Trailing Party','Margin','Status','State','State-code']
+data.to_csv('eci-constituency-wise.csv', index=False, encoding='utf-8')
